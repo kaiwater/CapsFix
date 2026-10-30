@@ -17,8 +17,14 @@ var lastDown: [Int64: Double] = [:]
 var suppressUp: [Int64: Int] = [:]
 var downKeys = Set<Int64>()
 var genuineCaps = false
+var activeTap: CFMachPort?
 
 func uptime() -> Double { ProcessInfo.processInfo.systemUptime }
+
+func logLine(_ s: String) {
+    print(s)
+    fflush(stdout)
+}
 
 guard let tap = CGEvent.tapCreate(
     tap: .cgSessionEventTap,
@@ -26,6 +32,15 @@ guard let tap = CGEvent.tapCreate(
     options: .defaultTap,
     eventsOfInterest: mask,
     callback: { _, type, event, _ in
+        // The system disables slow/idle taps. Re-enable immediately.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let t = activeTap {
+                CGEvent.tapEnable(tap: t, enable: true)
+                logLine("TAP_REENABLED")
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
         let kc = event.getIntegerValueField(.keyboardEventKeycode)
 
         if type == .keyDown {
@@ -73,16 +88,27 @@ guard let tap = CGEvent.tapCreate(
     },
     userInfo: nil
 ) else {
-    print("TAP_FAILED (need Accessibility permission)")
-    fflush(stdout)
+    logLine("TAP_FAILED (need Accessibility permission)")
     exit(2)
 }
+
+activeTap = tap
 
 let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
 CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
 CGEvent.tapEnable(tap: tap, enable: true)
-print("TAP_OK")
-fflush(stdout)
+logLine("TAP_OK")
+
+// Watchdog: if the tap gets disabled (sleep/wake, timeout), turn it back on.
+let watchdog = DispatchSource.makeTimerSource(queue: .main)
+watchdog.schedule(deadline: .now() + 3, repeating: 3)
+watchdog.setEventHandler {
+    if let t = activeTap, !CGEvent.tapIsEnabled(tap: t) {
+        CGEvent.tapEnable(tap: t, enable: true)
+        logLine("TAP_REENABLED (watchdog)")
+    }
+}
+watchdog.resume()
 
 if duration > 0 {
     DispatchQueue.main.asyncAfter(deadline: .now() + duration) { exit(0) }
