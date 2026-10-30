@@ -11,6 +11,30 @@
 
 ---
 
+## 下载 / Download
+
+预编译 **Universal 版（Intel + Apple Silicon）**见
+[Releases](https://github.com/kaiwater/CapsFix/releases)。
+
+1. 解压 `CapsFix-<version>-macOS-universal.zip`；
+2. 双击 `install.command`（或手动把 `CapsFix.app` 放进 `~/Applications`）；
+3. 若被 Gatekeeper 拦截：右键 → 打开，或执行
+   `xattr -dr com.apple.quarantine CapsFix.app`；
+4. 系统设置 → 隐私与安全性 → 辅助功能 → 添加 `CapsFix.app`；
+5. 生效后日志 `~/Library/Logs/capsfix.log` 会出现 `TAP_OK`。
+
+Prebuilt **universal binary (Intel + Apple Silicon)** is available under
+[Releases](https://github.com/kaiwater/CapsFix/releases).
+
+1. Unzip `CapsFix-<version>-macOS-universal.zip`;
+2. Double-click `install.command` (or move `CapsFix.app` into `~/Applications`);
+3. If Gatekeeper blocks it: right-click → Open, or run
+   `xattr -dr com.apple.quarantine CapsFix.app`;
+4. System Settings → Privacy & Security → Accessibility → add `CapsFix.app`;
+5. When it is working, `~/Library/Logs/capsfix.log` shows `TAP_OK`.
+
+---
+
 ## 目录 / Contents
 
 1. [事情是怎么开始的](#1-事情是怎么开始的--how-it-started)
